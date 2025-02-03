@@ -93,3 +93,10 @@ The script should be run from this repository's base folder.
 For a Quick-start and more comprehensive introduction to FlexBE, 
 see the [FlexBE Turtlesim Demonstrations](https://github.com/FlexBE/flexbe_turtlesim_demo).
 
+Our instructions:
+
+start WebUI:
+
+'ros2 launch flexbe_webui flexbe_ocs.launch.py headless:=True'
+'ros2 run flexbe_webui webui_client'
+'ros2 launch flexbe_onboard behavior_onboard.launch.py'
