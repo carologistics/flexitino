@@ -23,7 +23,7 @@ messages.
 
 from rclpy.duration import Duration
 # from geometry_msgs.msg import Quaternion
-from tf_transformations import quaternion_from_euler
+from transforms3d.euler import euler2quat
 
 from flexbe_core import EventState, Logger
 from flexbe_core.proxy import ProxyActionClient
@@ -95,7 +95,7 @@ class MoveToState(EventState):
         # Check if the action has been finished
         if self._client.has_result(self._topic):
             _ = self._client.get_result(self._topic)  # The delta result value is not useful here
-            userdata.duration = self._node.get_clock().now() - self._start_time
+            #userdata.duration = self._node.get_clock().now() - self._start_time
             Logger.loginfo('Pose reached')
             self._return = 'pose_reached'
             return self._return
@@ -134,7 +134,17 @@ class MoveToState(EventState):
 
         # Recording the start time to set rotation duration output
         self._start_time = self._node.get_clock().now()
-        goal.pose.header.stamp = self._start_time
+        # goal.pose.header.stamp = self._start_time
+
+        Logger.logwarn("frame_id type %s. Expects a string.", type(userdata.frame_id).__name__)
+        Logger.logwarn("frame_id = %s.", userdata.frame_id)
+        Logger.logwarn("target_x is %s. Expects an int or a float.", type(userdata.target_x).__name__)
+        Logger.logwarn("target_x is %f.", userdata.target_x)
+        Logger.logwarn("target_y is %s. Expects an int or a float.", type(userdata.target_y).__name__)
+        Logger.logwarn("target_y is %f.", userdata.target_y)
+        Logger.logwarn("target_yaw is %s. Expects an int or a float.", type(userdata.target_yaw).__name__)
+        Logger.logwarn("target_yaw is %f.", userdata.target_yaw)
+
 
         if isinstance(userdata.frame_id, str):
             goal.pose.header.frame_id = userdata.frame_id
@@ -144,21 +154,26 @@ class MoveToState(EventState):
             return
         
         if isinstance(userdata.target_x, (float, int)):
-            goal.pose.position.x = userdata.target_x
+            goal.pose.pose.position.x = userdata.target_x
         else:
             self._error = True
             Logger.logwarn("Input is %s. Expects an int or a float.", type(userdata.target_x).__name__)
             return
 
         if isinstance(userdata.target_y, (float, int)):
-            goal.pose.position.y = userdata.target_y
+            goal.pose.pose.position.y = userdata.target_y
         else:
             self._error = True
             Logger.logwarn("Input is %s. Expects an int or a float.", type(userdata.target_y).__name__)
             return
 
         if isinstance(userdata.target_yaw, (float, int)):
-            goal.pose.orientation = quaternion_from_euler(0, 0, userdata.target_yaw)
+            quat = euler2quat(0, 0, userdata.target_yaw)
+            goal.pose.pose.orientation.x = quat[1]
+            goal.pose.pose.orientation.y = quat[2]
+            goal.pose.pose.orientation.z = quat[3]
+            goal.pose.pose.orientation.w = quat[0]
+            pass
         else:
             self._error = True
             Logger.logwarn("Input is %s. Expects an int or a float.", type(userdata.target_yaw).__name__)

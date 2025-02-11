@@ -98,5 +98,19 @@ Our instructions:
 start WebUI:
 
 'ros2 launch flexbe_webui flexbe_ocs.launch.py headless:=True'
+
 'ros2 run flexbe_webui webui_client'
+
 'ros2 launch flexbe_onboard behavior_onboard.launch.py'
+
+start behavior without WebUI:
+
+'ros2 launch flexbe_onboard behavior_onboard.launch.py'
+
+'ros2 run flexbe_widget be_action_server'
+
+example:
+
+'
+ros2 action send_goal /flexbe/execute_behavior flexbe_msgs/action/BehaviorExecution "{behavior_name: 'MoveTo', input_keys: ['frame_id','target_x','target_y','target_yaw'], input_values: ['map','3.0','4.5','1.0']}"
+'
