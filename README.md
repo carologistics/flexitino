@@ -93,24 +93,26 @@ The script should be run from this repository's base folder.
 For a Quick-start and more comprehensive introduction to FlexBE, 
 see the [FlexBE Turtlesim Demonstrations](https://github.com/FlexBE/flexbe_turtlesim_demo).
 
-Our instructions:
+# Our instructions:
 
-start WebUI:
+### start WebUI:
 
-'ros2 launch flexbe_webui flexbe_ocs.launch.py headless:=True'
+```ros2 launch flexbe_webui flexbe_ocs.launch.py headless:=True```
 
-'ros2 run flexbe_webui webui_client'
+```ros2 run flexbe_webui webui_client```
 
-'ros2 launch flexbe_onboard behavior_onboard.launch.py'
+```ros2 launch flexbe_onboard behavior_onboard.launch.py```
 
-start behavior without WebUI:
+## start behavior without WebUI:
 
-'ros2 launch flexbe_onboard behavior_onboard.launch.py'
+requires flexbe_behavior_engine to be on carologistic's fork on branch [mtschesche/action_server_jazzy](https://github.com/carologistics/flexbe_behavior_engine/tree/mtschesche/action_server_jazzy)
 
-'ros2 run flexbe_widget be_action_server'
+```ros2 launch flexbe_onboard behavior_onboard.launch.py```
+
+```ros2 run flexbe_widget be_action_server```
 
 example:
 
-'
+```
 ros2 action send_goal /flexbe/execute_behavior flexbe_msgs/action/BehaviorExecution "{behavior_name: 'MoveTo', input_keys: ['frame_id','target_x','target_y','target_yaw'], input_values: ['map','3.0','4.5','1.0']}"
-'
+```
