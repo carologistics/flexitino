@@ -116,17 +116,17 @@ class MoveToState(EventState):
 
         if 'target_x' not in userdata:
             self._error = True
-            Logger.logwarn("MoveTotState requires userdata.target_x key!")
+            Logger.logwarn("MoveToState requires userdata.target_x key!")
             return
         
         if 'target_y' not in userdata:
             self._error = True
-            Logger.logwarn("MoveTotState requires userdata.target_y key!")
+            Logger.logwarn("MoveToState requires userdata.target_y key!")
             return
         
         if 'target_yaw' not in userdata:
             self._error = True
-            Logger.logwarn("MoveTotState requires userdata.target_yaw key!")
+            Logger.logwarn("MoveToState requires userdata.target_yaw key!")
             return
 
         # create goal msg
