@@ -16,6 +16,7 @@
   <exec_depend>rclpy</exec_depend>
   <exec_depend>flexbe_core</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
+  <exec_depend>motor_move_msgs</exec_depend>
   <exec_depend>tf_transformations</exec_depend>
   <exec_depend>tf</exec_depend>
 
