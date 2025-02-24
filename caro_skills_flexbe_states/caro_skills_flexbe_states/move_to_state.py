@@ -153,21 +153,21 @@ class MoveToState(EventState):
             Logger.logwarn("Input is %s. Expects a string.", type(userdata.frame_id).__name__)
             return
         
-        if isinstance(userdata.target_x, (float, int)):
+        if isinstance(userdata.target_x, float):
             goal.pose.pose.position.x = userdata.target_x
         else:
             self._error = True
-            Logger.logwarn("Input is %s. Expects an int or a float.", type(userdata.target_x).__name__)
+            Logger.logwarn("Input is %s. Expects a float.", type(userdata.target_x).__name__)
             return
 
-        if isinstance(userdata.target_y, (float, int)):
+        if isinstance(userdata.target_y, float):
             goal.pose.pose.position.y = userdata.target_y
         else:
             self._error = True
-            Logger.logwarn("Input is %s. Expects an int or a float.", type(userdata.target_y).__name__)
+            Logger.logwarn("Input is %s. Expects a float.", type(userdata.target_y).__name__)
             return
 
-        if isinstance(userdata.target_yaw, (float, int)):
+        if isinstance(userdata.target_yaw, float):
             quat = euler2quat(0, 0, userdata.target_yaw)
             goal.pose.pose.orientation.x = quat[1]
             goal.pose.pose.orientation.y = quat[2]
@@ -176,7 +176,7 @@ class MoveToState(EventState):
             pass
         else:
             self._error = True
-            Logger.logwarn("Input is %s. Expects an int or a float.", type(userdata.target_yaw).__name__)
+            Logger.logwarn("Input is %s. Expects a float.", type(userdata.target_yaw).__name__)
             return
 
         # Send the goal.
