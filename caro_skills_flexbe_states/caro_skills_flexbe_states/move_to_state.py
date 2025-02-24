@@ -136,13 +136,9 @@ class MoveToState(EventState):
         self._start_time = self._node.get_clock().now()
         # goal.pose.header.stamp = self._start_time
 
-        Logger.logwarn("frame_id type %s. Expects a string.", type(userdata.frame_id).__name__)
         Logger.logwarn("frame_id = %s.", userdata.frame_id)
-        Logger.logwarn("target_x is %s. Expects an int or a float.", type(userdata.target_x).__name__)
         Logger.logwarn("target_x is %f.", userdata.target_x)
-        Logger.logwarn("target_y is %s. Expects an int or a float.", type(userdata.target_y).__name__)
         Logger.logwarn("target_y is %f.", userdata.target_y)
-        Logger.logwarn("target_yaw is %s. Expects an int or a float.", type(userdata.target_yaw).__name__)
         Logger.logwarn("target_yaw is %f.", userdata.target_yaw)
 
 
