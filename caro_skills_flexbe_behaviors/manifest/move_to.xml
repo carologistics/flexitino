@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<behavior name="MoveTo">
+
+    <executable package_path="caro_skills_flexbe_behaviors.moveto_sm" class="MoveToSM" />
+    <tagstring></tagstring>
+    <author>Carologistics</author>
+    <date>Sat Feb 01 2025</date>
+    <description>
+        This state moves the robot to the given pose using MotorMove messages. It does
+        not avoid collisions!
+    </description>
+
+
+    <!-- Contained Behaviors -->
+
+    <!-- Available Parameters -->
+    <params>
+
+        <param type="numeric" name="timeout" default="0" label="timeout" hint="Sets the timeout">
+            <min value="0" />
+            <max value="1" />
+        </param>
+
+        <param type="text" name="action_topic" default="" label="action_topic" hint="Sets the action_topic" />
+
+    </params>
+
+
+</behavior>
