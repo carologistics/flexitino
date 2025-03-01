@@ -7,8 +7,7 @@
     <author>Carologistics</author>
     <date>Sat Feb 01 2025</date>
     <description>
-        This state moves the robot to the given pose using MotorMove messages. It does
-        not avoid collisions!
+        This state navigates the robot to the given pose using NavigateToPose messages
     </description>
 
 

@@ -36,17 +36,16 @@
 ###########################################################
 
 """
-Define MotorMove.
+Define MoveTo.
 
-This state moves the robot to the given pose using MotorMove messages. It does
-not avoid collisions!
+This state navigates the robot to the given pose using NavigateToPose messages
 
 Created on Sat Feb 01 2025
 @author: Carologistics
 """
 
 
-from caro_skills_flexbe_states.motor_move import MotorMoveState
+from caro_skills_flexbe_states.move_to_state import MoveToState
 from flexbe_core import Autonomy
 from flexbe_core import Behavior
 from flexbe_core import ConcurrencyContainer
@@ -64,10 +63,9 @@ from motor_move_msgs.action import MotorMove
 
 class MoveToSM(Behavior):
     """
-    Define MotorMove.
+    Define MoveTo.
 
-    This state moves the robot to the given pose using MotorMove messages. It does
-    not avoid collisions!
+    This state navigates the robot to the given pose using NavigateToPose messages
     """
 
     def __init__(self, node):
@@ -99,7 +97,7 @@ class MoveToSM(Behavior):
         _state_machine.userdata.target_x = 3.0
         _state_machine.userdata.target_y = 4.5
         _state_machine.userdata.target_yaw = 1.0
-        _state_machine.userdata.frame_id = "robotinobase1/base_link"
+        _state_machine.userdata.frame_id = "map"
 
         # Additional creation code can be added inside the following tags
         # [MANUAL_CREATE]
@@ -108,14 +106,14 @@ class MoveToSM(Behavior):
         # [/MANUAL_CREATE]
 
         with _state_machine:
-            # x:185 y:175
-            OperatableStateMachine.add('MotorMove',
-                                       MotorMoveState(timeout=60,
-                                                      action_topic="/robotinobase1/motor_move_action"),
-                                       transitions={'pose_reached': 'finished'  # 521 151 -1 -1 -1 -1
-                                                    , 'failed': 'failed'  # 127 293 -1 -1 -1 -1
-                                                    , 'canceled': 'failed'  # 127 293 -1 -1 -1 -1
-                                                    , 'timeout': 'failed'  # 127 293 -1 -1 -1 -1
+            # x:201 y:146
+            OperatableStateMachine.add('MoveTo',
+                                       MoveToState(timeout=60,
+                                                   action_topic="/robotinobase1/navigate_to_pose"),
+                                       transitions={'pose_reached': 'finished'  # 513 183 -1 -1 -1 -1
+                                                    , 'failed': 'failed'  # 135 260 -1 -1 -1 -1
+                                                    , 'canceled': 'failed'  # 134 258 -1 -1 -1 -1
+                                                    , 'timeout': 'failed'  # 135 258 -1 -1 -1 -1
                                                     },
                                        autonomy={'pose_reached': Autonomy.Off,
                                                  'failed': Autonomy.Off,

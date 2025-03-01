@@ -96,9 +96,9 @@ class MotorMoveSM(Behavior):
         # Root state machine
         # x:679 y:199, x:58 y:338
         _state_machine = OperatableStateMachine(outcomes=['finished', 'failed'])
-        _state_machine.userdata.target_x = 3.0
-        _state_machine.userdata.target_y = 4.5
-        _state_machine.userdata.target_yaw = 1.0
+        _state_machine.userdata.target_x = -20.0
+        _state_machine.userdata.target_y = 0.5
+        _state_machine.userdata.target_yaw = 0.0
         _state_machine.userdata.frame_id = "robotinobase1/base_link"
 
         # Additional creation code can be added inside the following tags
