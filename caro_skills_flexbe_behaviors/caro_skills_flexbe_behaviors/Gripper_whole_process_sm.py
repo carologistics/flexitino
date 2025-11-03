@@ -45,8 +45,8 @@ Created on Thu Mar 13 2025
 """
 
 
-from caro_skills_flexbe_states.calibrate_state import CalibrateToOrigin
 from caro_skills_flexbe_states.gripper_gigatino_state import GripperState
+from caro_skills_flexbe_states.home_state import Home
 from caro_skills_flexbe_states.move_gripper_state import GripperMove
 from caro_skills_flexbe_states.move_gripper_up_state import GripperMoveUp
 from flexbe_core import Autonomy
@@ -103,7 +103,7 @@ class Gripper_whole_processSM(Behavior):
         _state_machine.userdata.z_offset = 0.05
         _state_machine.userdata.gripper_state = False
         _state_machine.userdata.use_gripper = False
-        _state_machine.userdata.target_frame = 'gripper_home_origin'
+        _state_machine.userdata.target_frame = 'end_effector_home'
         _state_machine.userdata.relative = False
         _state_machine.userdata.open = False
 
@@ -138,7 +138,7 @@ class Gripper_whole_processSM(Behavior):
 
             # x:407 y:237
             OperatableStateMachine.add('grip',
-                                       GripperState(timeout=3,
+                                       GripperState(timeout=3000,
                                                     action_topic='/gigatino/gripper'),
                                        transitions={'success': 'move up'  # 566 312 -1 -1 -1 -1
                                                     , 'failed': 'failed'  # 274 333 -1 -1 -1 -1
@@ -151,9 +151,23 @@ class Gripper_whole_processSM(Behavior):
                                                  'timeout': Autonomy.Off},
                                        remapping={'open': 'open'})
 
+            # x:447 y:456
+            OperatableStateMachine.add('home',
+                                       Home(timeout=1000,
+                                            action_topic='/gigatino/calibrate'),
+                                       transitions={'pose_reached': 'finished'  # 416 597 -1 -1 -1 -1
+                                                    , 'failed': 'failed'  # 291 455 -1 -1 -1 -1
+                                                    , 'canceled': 'failed'  # 291 455 -1 -1 -1 -1
+                                                    , 'timeout': 'failed'  # 291 455 -1 -1 -1 -1
+                                                    },
+                                       autonomy={'pose_reached': Autonomy.Off,
+                                                 'failed': Autonomy.Off,
+                                                 'canceled': Autonomy.Off,
+                                                 'timeout': Autonomy.Off})
+
             # x:258 y:62
             OperatableStateMachine.add('move down',
-                                       GripperMove(timeout=3,
+                                       GripperMove(timeout=3000,
                                                    action_topic='/gigatino/move'),
                                        transitions={'reached': 'grip'  # 438 175 -1 -1 -1 -1
                                                     , 'failed': 'failed'  # 197 261 -1 -1 -1 -1
@@ -174,9 +188,9 @@ class Gripper_whole_processSM(Behavior):
 
             # x:503 y:349
             OperatableStateMachine.add('move up',
-                                       GripperMoveUp(timeout=5,
+                                       GripperMoveUp(timeout=500,
                                                      action_topic='/gigatino/move'),
-                                       transitions={'reached': 'to home origin'  # 582 430 -1 -1 -1 -1
+                                       transitions={'reached': 'home'  # 458 433 -1 -1 -1 -1
                                                     , 'failed': 'failed'  # 320 400 -1 -1 -1 -1
                                                     , 'canceled': 'failed'  # 320 400 -1 -1 -1 -1
                                                     , 'timeout': 'failed'  # 320 400 -1 -1 -1 -1
@@ -193,20 +207,6 @@ class Gripper_whole_processSM(Behavior):
                                                   'gripper_state': 'gripper_state',
                                                   'use_gripper': 'use_gripper',
                                                   'z_offset': 'z_offset'})
-
-            # x:496 y:429
-            OperatableStateMachine.add('to home origin',
-                                       CalibrateToOrigin(timeout=3,
-                                                         action_topic='/gigatino/calibrate'),
-                                       transitions={'pose_reached': 'finished'  # 440 584 -1 -1 -1 -1
-                                                    , 'failed': 'failed'  # 317 446 -1 -1 -1 -1
-                                                    , 'canceled': 'failed'  # 317 446 -1 -1 -1 -1
-                                                    , 'timeout': 'failed'  # 317 446 -1 -1 -1 -1
-                                                    },
-                                       autonomy={'pose_reached': Autonomy.Off,
-                                                 'failed': Autonomy.Off,
-                                                 'canceled': Autonomy.Off,
-                                                 'timeout': Autonomy.Off})
 
         return _state_machine
 
