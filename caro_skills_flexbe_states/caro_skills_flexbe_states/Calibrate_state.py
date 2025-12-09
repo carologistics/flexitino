@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2023 Carologistics
+# Copyright 2023 Christopher Newport University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,11 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Demonstration state."""
+
+from rclpy.duration import Duration
 from flexbe_core import EventState, Logger
 from flexbe_core.proxy import ProxyActionClient
+from flexbe_core import EventState, Logger
 from gigatino_msgs.action import Calibrate
-from rclpy.duration import Duration
-class CalibrateToOrigin(EventState):
+class Calibrate(EventState):
     """
     This state navigates the robot to the given pose using NavigateToPose messages
 
@@ -32,8 +35,10 @@ class CalibrateToOrigin(EventState):
     <= canceled            User canceled before completion.
     <= timeout             The action has timed out.
 
+    >#
+
     """
-    def __init__(self, timeout,action_topic='/gigatino/calibrate'):
+    def __init__(self, timeout,action_topic='robotinobase2/gigatino/calibrate'):
 
         super().__init__(outcomes=['pose_reached', 'failed', 'canceled', 'timeout'],
                          output_keys=[])
@@ -44,7 +49,7 @@ class CalibrateToOrigin(EventState):
         # Create the action client when building the behavior.
         # Using the proxy client provides asynchronous access to the result and status
         # and makes sure only one client is used, no matter how often this state is used in a behavior.
-        ProxyActionClient.initialize(CalibrateToOrigin._node)
+        ProxyActionClient.initialize(Calibrate._node)
 
         self._client = ProxyActionClient({self._topic: Calibrate},
                                          wait_duration=0.0)  # pass required clients as dict (topic: type)

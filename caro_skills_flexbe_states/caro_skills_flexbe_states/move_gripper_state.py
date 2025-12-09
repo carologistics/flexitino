@@ -41,7 +41,7 @@ class GripperMove(EventState):
     ># gripper_state        the gripper state
     ># use_gripper          are we using the gripper
     """
-    def __init__(self, timeout,action_topic='/gigatino/move'):
+    def __init__(self, timeout,action_topic='robotinobase2/gigatino/move'):
 
         super().__init__(outcomes=['reached', 'failed', 'canceled', 'timeout'],
                          input_keys=['relative','target_frame', 'x','y', 'z','gripper_state','use_gripper'],

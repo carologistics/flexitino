@@ -40,7 +40,7 @@ class GripperState(EventState):
 
     """
 
-    def __init__(self, timeout, action_topic='/gigatino/gripper'):
+    def __init__(self, timeout, action_topic='robotinobase2/gigatino/gripper'):
         # See example_state.py for basic explanations.
         super().__init__(outcomes=['success', 'failed', 'canceled', 'timeout'],
                          input_keys=['open'], output_keys=[])

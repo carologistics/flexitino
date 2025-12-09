@@ -33,7 +33,7 @@ class Home(EventState):
     <= timeout             The action has timed out.
 
     """
-    def __init__(self, timeout,action_topic='/gigatino/home'):
+    def __init__(self, timeout,action_topic='robotinobase2/gigatino/home'):
 
         super().__init__(outcomes=['pose_reached', 'failed', 'canceled', 'timeout'],
                          output_keys=[])

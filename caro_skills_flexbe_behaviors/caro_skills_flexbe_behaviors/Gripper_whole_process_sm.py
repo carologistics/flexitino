@@ -103,7 +103,7 @@ class Gripper_whole_processSM(Behavior):
         _state_machine.userdata.z_offset = 0.05
         _state_machine.userdata.gripper_state = False
         _state_machine.userdata.use_gripper = False
-        _state_machine.userdata.target_frame = 'end_effector_home'
+        _state_machine.userdata.target_frame = 'robotinobase2/end_effector_home'
         _state_machine.userdata.relative = False
         _state_machine.userdata.open = False
 
@@ -117,7 +117,7 @@ class Gripper_whole_processSM(Behavior):
             # x:30 y:40
             OperatableStateMachine.add('move above',
                                        GripperMoveUp(timeout=5,
-                                                     action_topic='/gigatino/move'),
+                                                     action_topic='robotinobase2/gigatino/move'),
                                        transitions={'reached': 'move down'  # 238 72 -1 -1 -1 -1
                                                     , 'failed': 'failed'  # 102 274 -1 -1 -1 -1
                                                     , 'canceled': 'failed'  # 102 274 -1 -1 -1 -1
@@ -139,7 +139,7 @@ class Gripper_whole_processSM(Behavior):
             # x:407 y:237
             OperatableStateMachine.add('grip',
                                        GripperState(timeout=3000,
-                                                    action_topic='/gigatino/gripper'),
+                                                    action_topic='robotinobase2/gigatino/gripper'),
                                        transitions={'success': 'move up'  # 566 312 -1 -1 -1 -1
                                                     , 'failed': 'failed'  # 274 333 -1 -1 -1 -1
                                                     , 'canceled': 'failed'  # 274 333 -1 -1 -1 -1
@@ -154,7 +154,7 @@ class Gripper_whole_processSM(Behavior):
             # x:447 y:456
             OperatableStateMachine.add('home',
                                        Home(timeout=1000,
-                                            action_topic='/gigatino/calibrate'),
+                                            action_topic='robotinobase2/gigatino/calibrate'),
                                        transitions={'pose_reached': 'finished'  # 416 597 -1 -1 -1 -1
                                                     , 'failed': 'failed'  # 291 455 -1 -1 -1 -1
                                                     , 'canceled': 'failed'  # 291 455 -1 -1 -1 -1
@@ -168,7 +168,7 @@ class Gripper_whole_processSM(Behavior):
             # x:258 y:62
             OperatableStateMachine.add('move down',
                                        GripperMove(timeout=3000,
-                                                   action_topic='/gigatino/move'),
+                                                   action_topic='robotinobase2/gigatino/move'),
                                        transitions={'reached': 'grip'  # 438 175 -1 -1 -1 -1
                                                     , 'failed': 'failed'  # 197 261 -1 -1 -1 -1
                                                     , 'canceled': 'failed'  # 197 261 -1 -1 -1 -1
@@ -189,7 +189,7 @@ class Gripper_whole_processSM(Behavior):
             # x:503 y:349
             OperatableStateMachine.add('move up',
                                        GripperMoveUp(timeout=500,
-                                                     action_topic='/gigatino/move'),
+                                                     action_topic='robotinobase2/gigatino/move'),
                                        transitions={'reached': 'home'  # 458 433 -1 -1 -1 -1
                                                     , 'failed': 'failed'  # 320 400 -1 -1 -1 -1
                                                     , 'canceled': 'failed'  # 320 400 -1 -1 -1 -1
