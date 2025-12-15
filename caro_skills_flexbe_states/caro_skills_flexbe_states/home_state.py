@@ -18,7 +18,7 @@ from flexbe_core import EventState, Logger
 from flexbe_core.proxy import ProxyActionClient
 from gigatino_msgs.action import Home
 from rclpy.duration import Duration
-class Home(EventState):
+class BackToOrigin(EventState):
     """
     This state navigates the robot to the given pose using NavigateToPose messages
 
@@ -44,7 +44,7 @@ class Home(EventState):
         # Create the action client when building the behavior.
         # Using the proxy client provides asynchronous access to the result and status
         # and makes sure only one client is used, no matter how often this state is used in a behavior.
-        ProxyActionClient.initialize(Home._node)
+        ProxyActionClient.initialize(BackToOrigin._node)
 
         self._client = ProxyActionClient({self._topic: Home},
                                          wait_duration=0.0)  # pass required clients as dict (topic: type)
