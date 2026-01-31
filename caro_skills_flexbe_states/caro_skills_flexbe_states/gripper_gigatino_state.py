@@ -27,7 +27,7 @@ class GripperState(EventState):
     
     Parameters
     -- timeout             Maximum time allowed (seconds)
-    -- action_topic        Name of action to invoke
+    -- action_topic        Name of action to invoke example ='robotinobase2/gigatino/gripper'
 
     Outputs
     <= success             congrats we got the workpiece.
@@ -40,7 +40,7 @@ class GripperState(EventState):
 
     """
 
-    def __init__(self, timeout, action_topic='robotinobase2/gigatino/gripper'):
+    def __init__(self, timeout, action_topic):
         # See example_state.py for basic explanations.
         super().__init__(outcomes=['success', 'failed', 'canceled', 'timeout'],
                          input_keys=['open'], output_keys=[])
