@@ -21,7 +21,7 @@ from gigatino_msgs.action import Gripper
 from flexbe_core import EventState, Logger
 from flexbe_core.proxy import ProxyActionClient
 
-class GripperState(EventState):
+class GripperCloseState(EventState):
     """
     Use to grip the workpiece
     
@@ -36,14 +36,14 @@ class GripperState(EventState):
     <= timeout             The action has timed out.
 
     User data
-    ># open   bool         true to open the gripper
+    ># close   bool         false to close the gripper
 
     """
 
     def __init__(self, timeout, action_topic):
         # See example_state.py for basic explanations.
         super().__init__(outcomes=['success', 'failed', 'canceled', 'timeout'],
-                         input_keys=['open'], output_keys=[])
+                         input_keys=['close'], output_keys=[])
 
         self._timeout = Duration(seconds=timeout)
         self._timeout_sec = timeout
@@ -52,7 +52,7 @@ class GripperState(EventState):
         # Create the action client when building the behavior.
         # Using the proxy client provides asynchronous access to the result and status
         # and makes sure only one client is used, no matter how often this state is used in a behavior
-        ProxyActionClient.initialize(GripperState._node)
+        ProxyActionClient.initialize(GripperCloseState._node)
 
         self._client = ProxyActionClient({self._topic: Gripper},
                                          wait_duration=0.0)  # pass required clients as dict (topic: type)
@@ -99,18 +99,17 @@ class GripperState(EventState):
         self._target_time = Duration(seconds=self._timeout_sec)  
 
 
-        if 'open' not in userdata:
+        if 'close' not in userdata:
             self._error = True
-            Logger.logwarn("ExampleActionState requires data")
+            Logger.logwarn("GripperCloseState requires data")
             return
         goal = Gripper.Goal()
 
-        if isinstance(userdata.open, bool):
-            goal.open = userdata.open  
+        if isinstance(userdata.close, bool):
+            goal.open = userdata.close  
         else:
             self._error = True
-            Logger.logwarn("Input is %s. Expects an bool", type(userdata.open).__name__)
-
+            Logger.logwarn("Input is %s. Expects an bool", type(userdata.close).__name__)
 
         # Send the goal.
         try:

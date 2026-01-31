@@ -153,7 +153,7 @@ class Gripper_whole_processSM(Behavior):
             # x:797 y:122
             OperatableStateMachine.add('grip',
                                        GripperState(timeout=10,
-                                                    action_topic='robotinobase2/gigatino/gripper'),
+                                                    action_topic='robotinobase1/gigatino/gripper'),
                                        transitions={'success': 'up'  # 889 272 -1 -1 -1 -1
                                                     , 'failed': 'failed'  # 467 287 -1 -1 -1 -1
                                                     , 'canceled': 'failed'  # 467 287 -1 -1 -1 -1
