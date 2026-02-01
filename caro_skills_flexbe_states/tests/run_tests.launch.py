@@ -1,3 +1,16 @@
+# # Copyright 2026 Carologistics
+# #
+# # Licensed under the Apache License, Version 2.0 (the "License");
+# # you may not use this file except in compliance with the License.
+# # You may obtain a copy of the License at
+# #
+# #     http://www.apache.org/licenses/LICENSE-2.0
+# #
+# # Unless required by applicable law or agreed to in writing, software
+# # distributed under the License is distributed on an "AS IS" BASIS,
+# # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# # See the License for the specific language governing permissions and
+# # limitations under the License.
 # Copyright 2023 Philipp Schillinger, Team ViGIR, Christopher Newport University
 #
 # Redistribution and use in source and binary forms, with or without
@@ -25,22 +38,21 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-
 """caro_skills_flexbe_states testing."""
-
 from os.path import join
 
-from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.substitutions import LaunchConfiguration
-from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
 
 
 def generate_launch_description():
     """Flexbe_states testing."""
-    flexbe_testing_dir = get_package_share_directory('flexbe_testing')
-    flexbe_states_test_dir = get_package_share_directory('caro_skills_flexbe_states')
+    flexbe_testing_dir = get_package_share_directory("flexbe_testing")
+    flexbe_states_test_dir = get_package_share_directory("caro_skills_flexbe_states")
 
     path = join(flexbe_states_test_dir, "tests")
 
@@ -49,16 +61,18 @@ def generate_launch_description():
     testcases += join(path, "example_state.test") + "\n"
     testcases += join(path, "example_action_state.test") + "\n"
 
-    return LaunchDescription([
-        DeclareLaunchArgument("pkg", default_value="caro_skills_flexbe_states"),
-        DeclareLaunchArgument("testcases", default_value=testcases),
-        DeclareLaunchArgument("compact_format", default_value='true'),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(join(flexbe_testing_dir, "launch", "flexbe_testing.launch.py")),
-            launch_arguments={
-                'package': LaunchConfiguration("pkg"),
-                'compact_format': LaunchConfiguration("compact_format"),
-                'testcases': LaunchConfiguration("testcases"),
-            }.items()
-        )
-    ])
+    return LaunchDescription(
+        [
+            DeclareLaunchArgument("pkg", default_value="caro_skills_flexbe_states"),
+            DeclareLaunchArgument("testcases", default_value=testcases),
+            DeclareLaunchArgument("compact_format", default_value="true"),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(join(flexbe_testing_dir, "launch", "flexbe_testing.launch.py")),
+                launch_arguments={
+                    "package": LaunchConfiguration("pkg"),
+                    "compact_format": LaunchConfiguration("compact_format"),
+                    "testcases": LaunchConfiguration("testcases"),
+                }.items(),
+            ),
+        ]
+    )

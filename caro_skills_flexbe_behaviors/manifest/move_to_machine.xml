@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<behavior name="move to machine">
+
+    <executable package_path="caro_skills_flexbe_behaviors.move_to_machine_sm" class="movetomachineSM" />
+    <tagstring></tagstring>
+    <author>Sam Koehler</author>
+    <date>Wed Apr 30 2025</date>
+    <description>
+        Moves to a given TF
+    </description>
+
+
+    <!-- Contained Behaviors -->
+
+    <!-- Available Parameters -->
+
+</behavior>

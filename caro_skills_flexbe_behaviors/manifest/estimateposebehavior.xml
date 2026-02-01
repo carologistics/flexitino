@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<behavior name="EstimatePoseBehavior">
+
+    <executable package_path="caro_skills_flexbe_behaviors.estimateposebehavior_sm" class="EstimatePoseBehaviorSM" />
+    <tagstring></tagstring>
+    <author>Sam</author>
+    <date>Tue May 27 2025</date>
+    <description>
+        bla bla
+    </description>
+
+
+    <!-- Contained Behaviors -->
+
+    <!-- Available Parameters -->
+    <params>
+
+        <param type="numeric" name="timeout" default="0" label="timeout" hint="Sets the timeout">
+            <min value="0" />
+            <max value="1" />
+        </param>
+
+    </params>
+
+
+</behavior>
