@@ -16,12 +16,14 @@
   <exec_depend>rclpy</exec_depend>
   <exec_depend>flexbe_core</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
-  <exec_depend>python3-numpy</exec_depend>
-  <exec_depend>flexbe_core</exec_depend>
-  <exec_depend>gripper_msg</exec_depend>
+  <exec_depend>motor_move_msgs</exec_depend>
   <exec_depend>tf_transformations</exec_depend>
   <exec_depend>tf</exec_depend>
+  <exec_depend>transforms3d</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>gripper_msg</exec_depend>
   <exec_depend>std_msgs</exec_depend>
+
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>

@@ -1,7 +1,23 @@
-from flexbe_core import EventState, Logger
+# # Copyright 2026 Carologistics
+# #
+# # Licensed under the Apache License, Version 2.0 (the "License");
+# # you may not use this file except in compliance with the License.
+# # You may obtain a copy of the License at
+# #
+# #     http://www.apache.org/licenses/LICENSE-2.0
+# #
+# # Unless required by applicable law or agreed to in writing, software
+# # distributed under the License is distributed on an "AS IS" BASIS,
+# # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# # See the License for the specific language governing permissions and
+# # limitations under the License.
+from flexbe_core import EventState
+from flexbe_core import Logger
 from flexbe_core.proxy import ProxyActionClient
 from gripper_msgs.action import Gripper
 from rclpy.duration import Duration
+
+
 class gripperMoveForward(EventState):
     """
     This state navigates the robot to the given pose using NavigateToPose messages
@@ -22,11 +38,14 @@ class gripperMoveForward(EventState):
     ># y_target              Y value of goal pose
     ># z_target            z value of goal pose
     """
-    def __init__(self, timeout,action_topic):
 
-        super().__init__(outcomes=['pose_reached', 'failed', 'canceled', 'timeout'],
-                         input_keys=['frame', 'x_target','y_target', 'z_target'],
-                         output_keys=[])
+    def __init__(self, timeout, action_topic):
+
+        super().__init__(
+            outcomes=["pose_reached", "failed", "canceled", "timeout"],
+            input_keys=["frame", "x_target", "y_target", "z_target"],
+            output_keys=[],
+        )
         self._timeout = Duration(seconds=timeout)
         self._timeout_sec = timeout
         self._topic = action_topic
@@ -36,8 +55,9 @@ class gripperMoveForward(EventState):
         # and makes sure only one client is used, no matter how often this state is used in a behavior.
         ProxyActionClient.initialize(gripperMoveForward._node)
 
-        self._client = ProxyActionClient({self._topic: Gripper},
-                                         wait_duration=0.0)  # pass required clients as dict (topic: type)
+        self._client = ProxyActionClient(
+            {self._topic: Gripper}, wait_duration=0.0
+        )  # pass required clients as dict (topic: type)
 
         # It may happen that the action client fails to send the action goal.
         self._error = False
@@ -47,12 +67,12 @@ class gripperMoveForward(EventState):
     def execute(self, userdata):
         """
         Call this method periodically while the state is active.
-        
+
         If no outcome is returned, the state will stay active.
         """
         # Check if the client failed to send the goal.
         if self._error:
-            return 'failed'
+            return "failed"
 
         if self._return is not None:
             # Return prior outcome in case transition is blocked by autonomy level
@@ -62,8 +82,8 @@ class gripperMoveForward(EventState):
             # Normal completion, do not bother repeating the publish
             # We won't bother publishing a 0 command unless blocked (above)
             # so that we can chain multiple motions together
-            self._return = 'timeout'
-            return 'timeout'
+            self._return = "timeout"
+            return "timeout"
 
         # Normal operation
         if self._cmd_topic:
@@ -80,17 +100,17 @@ class gripperMoveForward(EventState):
         """
         self._error = False
         self._return = None  # reset the completion flag
-        if 'x_target' not in userdata:
+        if "x_target" not in userdata:
             self._error = True
             Logger.logwarn("MoveTotState requires userdata.target_x key!")
             return
-        
-        if 'y_target' not in userdata:
+
+        if "y_target" not in userdata:
             self._error = True
             Logger.logwarn("MoveTotState requires userdata.target_y key!")
             return
-        
-        if 'z_target' not in userdata:
+
+        if "z_target" not in userdata:
             self._error = True
             Logger.logwarn("MoveTotState requires userdata.target_yaw key!")
             return
@@ -115,8 +135,7 @@ class gripperMoveForward(EventState):
             Logger.logwarn(f"Invalid frame_id type: {type(userdata.frame).__name__}. Expected a string.")
             self._error = True
             return
-        
-        
+
         if isinstance(userdata.x_target, float):
             goal.x_target = userdata.x_target
         else:
@@ -150,8 +169,9 @@ class gripperMoveForward(EventState):
 
     def on_exit(self, userdata):
         # Make sure that the action is not running when leaving this state.
-        # A situation where the action would still be active is for example when the operator manually triggers an outcome.
+        # A situation where the action would still be active is for example when
+        # the operator manually triggers an outcome.
 
         if not self._client.has_result(self._topic):
             self._client.cancel(self._topic)
-            Logger.loginfo('Cancelled active action goal.')
+            Logger.loginfo("Cancelled active action goal.")
