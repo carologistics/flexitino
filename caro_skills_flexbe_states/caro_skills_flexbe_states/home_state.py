@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-
-# Copyright 2023 Carologistics
+# Copyright 2023-2026 Philipp Schillinger, Christopher Newport University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,18 +12,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from flexbe_core import EventState, Logger
+from flexbe_core import EventState
+from flexbe_core import Logger
 from flexbe_core.proxy import ProxyActionClient
 from gigatino_msgs.action import Home
 from rclpy.duration import Duration
+
+
 class BackToOrigin(EventState):
     """
-    This state navigates the robot to the given pose using NavigateToPose messages
+    state that moves gripper to home position.
 
     Parameters
     -- timeout             Maximum time allowed (seconds)
-    -- action_topic        Name of action to invoke
+    -- action_topic        Name of action to invoke (example: 'robotinobase2/gigatino/home')
 
     Outputs
     <= home reached        Robot reached pose successful.
@@ -33,10 +34,10 @@ class BackToOrigin(EventState):
     <= timeout             The action has timed out.
 
     """
-    def __init__(self, timeout,action_topic):
 
-        super().__init__(outcomes=['pose_reached', 'failed', 'canceled', 'timeout'],
-                         output_keys=[])
+    def __init__(self, timeout, action_topic):
+
+        super().__init__(outcomes=["home_reached", "failed", "canceled", "timeout"], output_keys=[])
         self._timeout = Duration(seconds=timeout)
         self._timeout_sec = timeout
         self._topic = action_topic
@@ -46,8 +47,9 @@ class BackToOrigin(EventState):
         # and makes sure only one client is used, no matter how often this state is used in a behavior.
         ProxyActionClient.initialize(BackToOrigin._node)
 
-        self._client = ProxyActionClient({self._topic: Home},
-                                         wait_duration=0.0)  # pass required clients as dict (topic: type)
+        self._client = ProxyActionClient(
+            {self._topic: Home}, wait_duration=0.0
+        )  # pass required clients as dict (topic: type)
 
         # It may happen that the action client fails to send the action goal.
         self._error = False
@@ -57,12 +59,12 @@ class BackToOrigin(EventState):
     def execute(self, userdata):
         """
         Call this method periodically while the state is active.
-        
+
         If no outcome is returned, the state will stay active.
         """
         # Check if the client failed to send the goal.
         if self._error:
-            return 'failed'
+            return "failed"
 
         if self._return is not None:
             # Return prior outcome in case transition is blocked by autonomy level
@@ -70,18 +72,14 @@ class BackToOrigin(EventState):
 
         if self._client.has_result(self._topic):
             _ = self._client.get_result(self._topic)  # The delta result value is not useful here
-            #userdata.duration = self._node.get_clock().now() - self._start_time
-            Logger.loginfo('Pose reached')
-            self._return = 'pose_reached'
+            # userdata.duration = self._node.get_clock().now() - self._start_time
+            Logger.loginfo("Home reached")
+            self._return = "home_reached"
             return self._return
 
         if self._node.get_clock().now().nanoseconds - self._start_time.nanoseconds > self._target_time.nanoseconds:
-            # Normal completion, do not bother repeating the publish
-            # We won't bother publishing a 0 command unless blocked (above)
-            # so that we can chain multiple motions together
-            self._return = 'timeout'
-            return 'timeout'
-
+            self._return = "timeout"
+            return "timeout"
 
         return None
 
@@ -92,21 +90,19 @@ class BackToOrigin(EventState):
         i.e. a transition from another state to this one is taken.
         """
         self._error = False
-        self._return = None 
-          # Initialize start time
+        self._return = None
+        # Initialize start time
         self._start_time = self._node.get_clock().now()
 
         # Define timeout duration (if not already initialized)
-        self._target_time = Duration(seconds=self._timeout_sec)  
+        self._target_time = Duration(seconds=self._timeout_sec)
 
         # create goal msg
         goal = Home.Goal()
         self._client.send_goal(self._topic, goal)
 
     def on_exit(self, userdata):
-        # Make sure that the action is not running when leaving this state.
-        # A situation where the action would still be active is for example when the operator manually triggers an outcome.
 
         if not self._client.has_result(self._topic):
             self._client.cancel(self._topic)
-            Logger.loginfo('Cancelled active action goal.')
+            Logger.loginfo("Cancelled active action goal.")
