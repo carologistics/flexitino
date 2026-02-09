@@ -21,7 +21,12 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'example_behavior_sm = caro_skills_flexbe_behaviors.example_behavior_sm',
+            'grip_sm = caro_skills_flexbe_behaviors.grip_sm',
+            'gripper_whole_process_sm = caro_skills_flexbe_behaviors.gripper_whole_process_sm',
+            'move_above_target_sm = caro_skills_flexbe_behaviors.move_above_target_sm',
+            'move_forward_sm = caro_skills_flexbe_behaviors.move_forward_sm',
+            'calibrate_sm = caro_skills_flexbe_behaviors.calibrate_sm',
+
         ],
     },
 )

@@ -19,19 +19,19 @@ from gigatino_msgs.action import Move
 from rclpy.duration import Duration
 
 
-class GripperMove(EventState):
+class GripperMoveUp(EventState):
     """
-    This state allows the gripper to move to target position
+    This state allows the gripper to move above target position
 
     Parameters
     -- timeout             Maximum time allowed (seconds)
-    -- action_topic        Name of action to invoke
+    -- action_topic        Name of action to invoke (example: 'robotinobase2/gigatino/move')
 
     Outputs
     <= reached              Robot reached pose successful
-    <= failed               Failed for some reason.
-    <= canceled             User canceled before completion.
-    <= timeout              The action has timed out.
+    <= failed                Failed for some reason.
+    <= canceled              User canceled before completion.
+    <= timeout               The action has timed out.
 
     User data
     ># relative             set default as false
@@ -39,15 +39,16 @@ class GripperMove(EventState):
     ># x                    X value of goal pose
     ># y                    Y value of goal pose
     ># z                    z value of goal pose
+    ># z_offset             the z value needed to avoid all obstacles
     ># gripper_state        the gripper state
     ># use_gripper          are we using the gripper
     """
 
-    def __init__(self, timeout, action_topic="robotinobase2/gigatino/move"):
+    def __init__(self, timeout, action_topic="/gigatino/move"):
 
         super().__init__(
             outcomes=["reached", "failed", "canceled", "timeout"],
-            input_keys=["relative", "target_frame", "x", "y", "z", "gripper_state", "use_gripper"],
+            input_keys=["relative", "target_frame", "x", "y", "z", "gripper_state", "use_gripper", "z_offset"],
             output_keys=[],
         )
         self._timeout = Duration(seconds=timeout)
@@ -57,12 +58,9 @@ class GripperMove(EventState):
         # Create the action client when building the behavior.
         # Using the proxy client provides asynchronous access to the result and status
         # and makes sure only one client is used, no matter how often this state is used in a behavior.
-        ProxyActionClient.initialize(GripperMove._node)
+        ProxyActionClient.initialize(GripperMoveUp._node)
 
-        self._client = ProxyActionClient(
-            {self._topic: Move}, wait_duration=0.0
-        )  # pass required clients as dict (topic: type)
-
+        self._client = ProxyActionClient({self._topic: Move}, wait_duration=0.0)
         # It may happen that the action client fails to send the action goal.
         self._error = False
         self._return = None  # Retain return value in case the outcome is blocked by operator
@@ -123,6 +121,7 @@ class GripperMove(EventState):
         # Recording the start time to set rotation duration output
         self._start_time = self._node.get_clock().now()
         # goal.pose.header.stamp = self._start_time
+
         # Define timeout duration (if not already initialized)
         self._target_time = Duration(seconds=self._timeout_sec)
 
@@ -141,7 +140,6 @@ class GripperMove(EventState):
             Logger.logwarn(f"Invalid relative type: {type(userdata.relative).__name__}. Expected a bool.")
             self._error = True
             return
-
         if isinstance(userdata.gripper_state, bool):
             goal.gripper_state = userdata.gripper_state  # Assign only if provided
             Logger.loginfo(f"{goal.gripper_state}")
@@ -175,7 +173,7 @@ class GripperMove(EventState):
             return
 
         if isinstance(userdata.z, float):
-            goal.z = userdata.z
+            goal.z = userdata.z + userdata.z_offset
             Logger.loginfo(f"{goal.z}")
         else:
             Logger.logwarn(f"Invalid target_z type: {type(userdata.z).__name__}. Expected float.")

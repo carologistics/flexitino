@@ -14,14 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Use to move gripper to target pose."""
+"""
+This state moves the robot to the given pose using MotorMove
+messages. It does not avoid collisions!
+"""
 
-import math
+# import math
 
 from rclpy.duration import Duration
+# from geometry_msgs.msg import Quaternion
+from transforms3d.euler import euler2quat
 
 from flexbe_core import EventState, Logger
 from flexbe_core.proxy import ProxyActionClient
+from motor_move_msgs.action import MotorMove
 
 # import of required action
 # This ExampleActionState is based on the standard action tutorials
@@ -31,31 +37,33 @@ from flexbe_core.proxy import ProxyActionClient
 # from turtlesim.action import RotateAbsolute
 
 
-class GripperCommandState(EventState):
+class MotorMoveState(EventState):
     """
-    Use to move gripper to target pose
-    
+    This state moves the robot to the given pose using MotorMove
+    messages. It does not avoid collisions!
+
     Parameters
     -- timeout             Maximum time allowed (seconds)
     -- action_topic        Name of action to invoke
 
     Outputs
-    <= rotation_complete   Only a few dishes have been cleaned.
+    <= pose_reached        Robot reached pose successful.
     <= failed              Failed for some reason.
     <= canceled            User canceled before completion.
     <= timeout             The action has timed out.
 
     User data
-    ># angle     float     Desired rotational angle in (degrees) (Input)
-    #> duration  float     Amount time taken to complete rotation (seconds) (Output)
-
+    ># frame_id            Frame of the goal pose
+    ># target_x              X value of goal pose
+    ># target_y              Y value of goal pose
+    ># target_yaw            Yaw value of goal pose
     """
 
-    def __init__(self, timeout, action_topic="/turtle1/rotate_absolute"):
+    def __init__(self, timeout, action_topic):
         # See example_state.py for basic explanations.
-        super().__init__(outcomes=['rotation_complete', 'failed', 'canceled', 'timeout'],
-                         input_keys=['angle'],
-                         output_keys=['duration'])
+        super().__init__(outcomes=['pose_reached', 'failed', 'canceled', 'timeout'],
+                         input_keys=['frame_id', 'target_x','target_y', 'target_yaw'],
+                         output_keys=[])
 
         self._timeout = Duration(seconds=timeout)
         self._timeout_sec = timeout
@@ -64,9 +72,9 @@ class GripperCommandState(EventState):
         # Create the action client when building the behavior.
         # Using the proxy client provides asynchronous access to the result and status
         # and makes sure only one client is used, no matter how often this state is used in a behavior.
-        ProxyActionClient.initialize(ExampleActionState._node)
+        ProxyActionClient.initialize(MotorMoveState._node)
 
-        self._client = ProxyActionClient({self._topic: RotateAbsolute},
+        self._client = ProxyActionClient({self._topic: MotorMove},
                                          wait_duration=0.0)  # pass required clients as dict (topic: type)
 
         # It may happen that the action client fails to send the action goal.
@@ -88,9 +96,9 @@ class GripperCommandState(EventState):
         # Check if the action has been finished
         if self._client.has_result(self._topic):
             _ = self._client.get_result(self._topic)  # The delta result value is not useful here
-            userdata.duration = self._node.get_clock().now() - self._start_time
-            Logger.loginfo('Rotation complete')
-            self._return = 'rotation_complete'
+            #userdata.duration = self._node.get_clock().now() - self._start_time
+            Logger.loginfo('Pose reached')
+            self._return = 'pose_reached'
             return self._return
 
         if self._node.get_clock().now().nanoseconds - self._start_time.nanoseconds > self._timeout.nanoseconds:
@@ -107,21 +115,66 @@ class GripperCommandState(EventState):
         self._error = False
         self._return = None
 
-        if 'angle' not in userdata:
+        if 'target_x' not in userdata:
             self._error = True
-            Logger.logwarn("ExampleActionState requires userdata.angle key!")
+            Logger.logwarn("MotorMoveState requires userdata.target_x key!")
             return
+        
+        if 'target_y' not in userdata:
+            self._error = True
+            Logger.logwarn("MotorMoveState requires userdata.target_y key!")
+            return
+        
+        if 'target_yaw' not in userdata:
+            self._error = True
+            Logger.logwarn("MotorMoveState requires userdata.target_yaw key!")
+            return
+
+        # create goal msg
+        goal = MotorMove.Goal()
 
         # Recording the start time to set rotation duration output
         self._start_time = self._node.get_clock().now()
+        # goal.pose.header.stamp = self._start_time
 
-        goal = RotateAbsolute.Goal()
+        Logger.logwarn("frame_id = %s.", userdata.frame_id)
+        Logger.logwarn("target_x is %f.", userdata.target_x)
+        Logger.logwarn("target_y is %f.", userdata.target_y)
+        Logger.logwarn("target_yaw is %f.", userdata.target_yaw)
 
-        if isinstance(userdata.angle, (float, int)):
-            goal.theta = (userdata.angle * math.pi) / 180  # convert to radians
+
+        if isinstance(userdata.frame_id, str):
+            goal.motor_goal.header.frame_id = userdata.frame_id
         else:
             self._error = True
-            Logger.logwarn("Input is %s. Expects an int or a float.", type(userdata.angle).__name__)
+            Logger.logwarn("Input is %s. Expects a string.", type(userdata.frame_id).__name__)
+            return
+        
+        if isinstance(userdata.target_x, float):
+            goal.motor_goal.pose.position.x = userdata.target_x
+        else:
+            self._error = True
+            Logger.logwarn("Input is %s. Expects a float.", type(userdata.target_x).__name__)
+            return
+
+        if isinstance(userdata.target_y, float):
+            goal.motor_goal.pose.position.y = userdata.target_y
+        else:
+            self._error = True
+            Logger.logwarn("Input is %s. Expects a float.", type(userdata.target_y).__name__)
+            return
+
+        if isinstance(userdata.target_yaw, float):
+            quat = euler2quat(0, 0, userdata.target_yaw)
+            goal.motor_goal.pose.orientation.x = quat[1]
+            goal.motor_goal.pose.orientation.y = quat[2]
+            goal.motor_goal.pose.orientation.z = quat[3]
+            goal.motor_goal.pose.orientation.w = quat[0]
+            pass
+        else:
+            self._error = True
+            Logger.logwarn("Input is %s. Expects a float.", type(userdata.target_yaw).__name__)
+            return
 
         # Send the goal.
         try:
@@ -130,7 +183,7 @@ class GripperCommandState(EventState):
             # Since a state failure not necessarily causes a behavior failure,
             # it is recommended to only print warnings, not errors.
             # Using a linebreak before appending the error log enables the operator to collapse details in the GUI.
-            Logger.logwarn(f"Failed to send the RotateAbsolute command:\n  {type(exc)} - {exc}")
+            Logger.logwarn(f"Failed to send the MotorMove command:\n  {type(exc)} - {exc}")
             self._error = True
 
     def on_exit(self, userdata):

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<behavior name="Gripper_whole_process">
+
+    <executable package_path="caro_skills_flexbe_behaviors.Gripper_whole_process_sm" class="Gripper_whole_processSM" />
+    <tagstring></tagstring>
+    <author>Zhen Yan Khaw</author>
+    <date>Thu Mar 13 2025</date>
+    <description>
+        to grab the work piece and return to origin
+    </description>
+
+
+    <!-- Contained Behaviors -->
+
+    <!-- Available Parameters -->
+    <params>
+
+        <param type="numeric" name="timeout" default="0" label="timeout" hint="Sets the timeout">
+            <min value="0" />
+            <max value="2" />
+        </param>
+
+        <param type="text" name="action_topic" default="" label="action_topic" hint="Sets the action_topic" />
+
+    </params>
+
+
+</behavior>
