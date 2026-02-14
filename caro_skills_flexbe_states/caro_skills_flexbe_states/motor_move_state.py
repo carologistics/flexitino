@@ -56,6 +56,8 @@ class MotorMoveState(EventState):
             input_keys=['namespace', 'frame', 'target_x', 'target_y', 'target_yaw'],
             output_keys=['distance'])
 
+        if isinstance(timeout, str):
+            timeout = float(timeout) if timeout else 10.0
         self._timeout = Duration(seconds=timeout)
         self._timeout_sec = timeout
         self._topic = None
