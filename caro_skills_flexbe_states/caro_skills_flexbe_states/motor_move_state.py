@@ -108,7 +108,9 @@ class MotorMoveState(EventState):
         # -- build goal -----------------------------------------------------
         goal = MotorMove.Goal()
         goal.motor_goal.header.frame_id = "%s/%s" % (userdata.namespace, userdata.frame)
-        goal.motor_goal.header.stamp = self._node.get_clock().now().to_msg()
+        # stamp=0 tells tf2 to use the latest available transform
+        goal.motor_goal.header.stamp.sec = 0
+        goal.motor_goal.header.stamp.nanosec = 0
         goal.motor_goal.pose.position.x = float(userdata.target_x)
         goal.motor_goal.pose.position.y = float(userdata.target_y)
         goal.motor_goal.pose.position.z = 0.0
