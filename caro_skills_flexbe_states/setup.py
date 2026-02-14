@@ -29,6 +29,7 @@ setup(
         'console_scripts': [
             'example_action_state = caro_skills_flexbe_states.example_action_state',
             'example_state = caro_skills_flexbe_states.example_state',
+            'motor_move_state = caro_skills_flexbe_states.motor_move_state',
         ],
     },
 )
