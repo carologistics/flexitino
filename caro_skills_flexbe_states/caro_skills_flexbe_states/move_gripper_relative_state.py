@@ -12,42 +12,45 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""use to calibrate gripper."""
 from flexbe_core import EventState
 from flexbe_core import Logger
 from flexbe_core.proxy import ProxyActionClient
-from gigatino_msgs.action import Calibrate
+from gigatino_msgs.action import Move
 from rclpy.duration import Duration
 
 
-class CalibratetoOrigin(EventState):
+class GripperMoveRelative(EventState):
     """
-    This state calibrates the gripper to the origin position.
+    This state moves the gripper to a position relative to a given frame.
 
     Parameters
     -- timeout             Maximum time allowed (seconds)
 
     Outputs
-    <= home_reached        Calibration successful.
-    <= failed              Failed for some reason.
-    <= canceled            User canceled before completion.
-    <= timeout             The action has timed out.
+    <= reached              Robot reached pose successfully
+    <= failed               Failed for some reason.
+    <= canceled             User canceled before completion.
+    <= timeout              The action has timed out.
 
     User data
-    ># ns                   Robot namespace (e.g. 'robotinobase3')
+    ># target_frame         Frame to move relative to
+    ># x                    X offset in target_frame (float)
+    ># y                    Y offset in target_frame (float)
+    ># z                    Z offset in target_frame (float)
+    ># ns                   Robot namespace (e.g. 'robotinobase2')
     """
 
     def __init__(self, timeout):
 
         super().__init__(
-            outcomes=["home_reached", "failed", "canceled", "timeout"],
-            input_keys=["ns"],
+            outcomes=["reached", "failed", "canceled", "timeout"],
+            input_keys=["target_frame", "x", "y", "z", "ns"],
             output_keys=[],
         )
         self._timeout = Duration(seconds=timeout)
         self._timeout_sec = timeout
 
-        ProxyActionClient.initialize(CalibratetoOrigin._node)
+        ProxyActionClient.initialize(GripperMoveRelative._node)
 
         self._client = None
         self._topic = None
@@ -61,21 +64,17 @@ class CalibratetoOrigin(EventState):
 
         If no outcome is returned, the state will stay active.
         """
-        # Check if the client failed to send the goal.
         if self._error:
             return "failed"
 
         if self._return is not None:
-            # Return prior outcome in case transition is blocked by autonomy level
             return self._return
 
         if self._client.has_result(self._topic):
-            _ = self._client.get_result(self._topic)  # The delta result value is not useful here
-            # userdata.duration = self._node.get_clock().now() - self._start_time
-            Logger.loginfo("Home reached")
-            self._return = "home_reached"
+            _ = self._client.get_result(self._topic)
+            Logger.loginfo("Pose reached")
+            self._return = "reached"
             return self._return
-
         if self._node.get_clock().now().nanoseconds - self._start_time.nanoseconds > self._target_time.nanoseconds:
             self._return = "timeout"
             return "timeout"
@@ -93,25 +92,53 @@ class CalibratetoOrigin(EventState):
 
         if "ns" not in userdata or not isinstance(userdata.ns, str):
             self._error = True
-            Logger.logwarn("CalibratetoOrigin requires userdata.ns (string)!")
+            Logger.logwarn("GripperMoveRelative requires userdata.ns (string)!")
             return
 
-        self._topic = f"{userdata.ns}/gigatino/calibrate"
+        if "target_frame" not in userdata or not isinstance(userdata.target_frame, str):
+            self._error = True
+            Logger.logwarn("GripperMoveRelative requires userdata.target_frame (string)!")
+            return
+
+        if "x" not in userdata or not isinstance(userdata.x, float):
+            self._error = True
+            Logger.logwarn("GripperMoveRelative requires userdata.x (float)!")
+            return
+
+        if "y" not in userdata or not isinstance(userdata.y, float):
+            self._error = True
+            Logger.logwarn("GripperMoveRelative requires userdata.y (float)!")
+            return
+
+        if "z" not in userdata or not isinstance(userdata.z, float):
+            self._error = True
+            Logger.logwarn("GripperMoveRelative requires userdata.z (float)!")
+            return
+
+        self._topic = f"{userdata.ns}/gigatino/move"
         self._client = ProxyActionClient(
-            {self._topic: Calibrate}, wait_duration=0.0
+            {self._topic: Move}, wait_duration=0.0
         )
 
+        goal = Move.Goal()
         self._start_time = self._node.get_clock().now()
         self._target_time = Duration(seconds=self._timeout_sec)
 
-        goal = Calibrate.Goal()
+        goal.target_frame = userdata.target_frame
+        goal.x = userdata.x
+        goal.y = userdata.y
+        goal.z = userdata.z
+        goal.relative = False
+        goal.use_gripper = False
+        goal.gripper_state = False
 
-        Logger.loginfo(f"Calibrating gripper (topic: {self._topic})")
+        Logger.loginfo(f"Moving to ({userdata.x}, {userdata.y}, {userdata.z}) "
+                       f"in frame: {userdata.target_frame} (topic: {self._topic})")
 
         try:
             self._client.send_goal(self._topic, goal, wait_duration=self._timeout_sec)
         except Exception as exc:
-            Logger.logwarn(f"Failed to send Calibrate command:\n  {type(exc)} - {exc}")
+            Logger.logwarn(f"Failed to send Move command:\n  {type(exc)} - {exc}")
             self._error = True
 
     def on_exit(self, userdata):
