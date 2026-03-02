@@ -159,13 +159,7 @@ class Gripper_whole_processSM(Behavior):
                                                  'failed': Autonomy.Off,
                                                  'canceled': Autonomy.Off,
                                                  'timeout': Autonomy.Off},
-                                       remapping={'relative': 'relative',
-                                                  'target_frame': 'target_frame',
-                                                  'x': 'x',
-                                                  'y': 'y',
-                                                  'z': 'z',
-                                                  'gripper_state': 'gripper_state',
-                                                  'use_gripper': 'use_gripper'})
+                                       remapping={'target_frame': 'target_frame'})
 
             # x:529 y:37
             OperatableStateMachine.add('grip',

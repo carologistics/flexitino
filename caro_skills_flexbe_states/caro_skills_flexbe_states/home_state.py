@@ -21,39 +21,37 @@ from rclpy.duration import Duration
 
 class BackToOrigin(EventState):
     """
-    state that moves gripper to home position.
+    State that moves gripper to home position.
 
     Parameters
     -- timeout             Maximum time allowed (seconds)
-    -- action_topic        Name of action to invoke (example: 'robotinobase2/gigatino/home')
 
     Outputs
-    <= home reached        Robot reached pose successful.
+    <= home_reached        Robot reached pose successfully.
     <= failed              Failed for some reason.
     <= canceled            User canceled before completion.
     <= timeout             The action has timed out.
 
+    User data
+    ># ns                   Robot namespace (e.g. 'robotinobase3')
     """
 
-    def __init__(self, timeout, action_topic):
+    def __init__(self, timeout):
 
-        super().__init__(outcomes=["home_reached", "failed", "canceled", "timeout"], output_keys=[])
+        super().__init__(
+            outcomes=["home_reached", "failed", "canceled", "timeout"],
+            input_keys=["ns"],
+            output_keys=[],
+        )
         self._timeout = Duration(seconds=timeout)
         self._timeout_sec = timeout
-        self._topic = action_topic
 
-        # Create the action client when building the behavior.
-        # Using the proxy client provides asynchronous access to the result and status
-        # and makes sure only one client is used, no matter how often this state is used in a behavior.
         ProxyActionClient.initialize(BackToOrigin._node)
 
-        self._client = ProxyActionClient(
-            {self._topic: Home}, wait_duration=0.0
-        )  # pass required clients as dict (topic: type)
-
-        # It may happen that the action client fails to send the action goal.
+        self._client = None
+        self._topic = None
         self._error = False
-        self._return = None  # Retain return value in case the outcome is blocked by operator
+        self._return = None
         self._start_time = None
 
     def execute(self, userdata):
@@ -91,15 +89,29 @@ class BackToOrigin(EventState):
         """
         self._error = False
         self._return = None
-        # Initialize start time
-        self._start_time = self._node.get_clock().now()
 
-        # Define timeout duration (if not already initialized)
+        if "ns" not in userdata or not isinstance(userdata.ns, str):
+            self._error = True
+            Logger.logwarn("BackToOrigin requires userdata.ns (string)!")
+            return
+
+        self._topic = f"{userdata.ns}/gigatino/home"
+        self._client = ProxyActionClient(
+            {self._topic: Home}, wait_duration=0.0
+        )
+
+        self._start_time = self._node.get_clock().now()
         self._target_time = Duration(seconds=self._timeout_sec)
 
-        # create goal msg
         goal = Home.Goal()
-        self._client.send_goal(self._topic, goal)
+
+        Logger.loginfo(f"Moving to home (topic: {self._topic})")
+
+        try:
+            self._client.send_goal(self._topic, goal, wait_duration=self._timeout_sec)
+        except Exception as exc:
+            Logger.logwarn(f"Failed to send Home command:\n  {type(exc)} - {exc}")
+            self._error = True
 
     def on_exit(self, userdata):
 

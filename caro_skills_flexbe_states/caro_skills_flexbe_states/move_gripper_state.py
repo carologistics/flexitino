@@ -21,51 +21,38 @@ from rclpy.duration import Duration
 
 class GripperMove(EventState):
     """
-    This state allows the gripper to move to target position
+    This state moves the gripper to the origin of a given frame.
 
     Parameters
     -- timeout             Maximum time allowed (seconds)
-    -- action_topic        Name of action to invoke
 
     Outputs
-    <= reached              Robot reached pose successful
+    <= reached              Robot reached pose successfully
     <= failed               Failed for some reason.
     <= canceled             User canceled before completion.
     <= timeout              The action has timed out.
 
     User data
-    ># relative             set default as false
-    ># target_frame         Frame of the goal pose
-    ># x                    X value of goal pose
-    ># y                    Y value of goal pose
-    ># z                    z value of goal pose
-    ># gripper_state        the gripper state
-    ># use_gripper          are we using the gripper
+    ># target_frame         Frame to move to (origin of this frame)
+    ># ns                   Robot namespace (e.g. 'robotinobase2')
     """
 
-    def __init__(self, timeout, action_topic="robotinobase2/gigatino/move"):
+    def __init__(self, timeout):
 
         super().__init__(
             outcomes=["reached", "failed", "canceled", "timeout"],
-            input_keys=["relative", "target_frame", "x", "y", "z", "gripper_state", "use_gripper"],
+            input_keys=["target_frame", "ns"],
             output_keys=[],
         )
         self._timeout = Duration(seconds=timeout)
         self._timeout_sec = timeout
-        self._topic = action_topic
 
-        # Create the action client when building the behavior.
-        # Using the proxy client provides asynchronous access to the result and status
-        # and makes sure only one client is used, no matter how often this state is used in a behavior.
         ProxyActionClient.initialize(GripperMove._node)
 
-        self._client = ProxyActionClient(
-            {self._topic: Move}, wait_duration=0.0
-        )  # pass required clients as dict (topic: type)
-
-        # It may happen that the action client fails to send the action goal.
+        self._client = None
+        self._topic = None
         self._error = False
-        self._return = None  # Retain return value in case the outcome is blocked by operator
+        self._return = None
         self._start_time = None
 
     def execute(self, userdata):
@@ -100,94 +87,41 @@ class GripperMove(EventState):
         i.e. a transition from another state to this one is taken.
         """
         self._error = False
-        if "x" not in userdata:
+        self._return = None
+
+        if "ns" not in userdata or not isinstance(userdata.ns, str):
             self._error = True
-            Logger.logwarn("MoveToState requires userdata.target_x key!")
+            Logger.logwarn("GripperMove requires userdata.ns (string)!")
             return
 
-        if "y" not in userdata:
+        if "target_frame" not in userdata or not isinstance(userdata.target_frame, str):
             self._error = True
-            Logger.logwarn("MoveToState requires userdata.target_y key!")
+            Logger.logwarn("GripperMove requires userdata.target_frame (string)!")
             return
 
-        if "z" not in userdata:
-            self._error = True
-            Logger.logwarn("MoveToState requires userdata.target_z key!")
-            return
-        if "target_frame" not in userdata:
-            self._error = True
-            Logger.logwarn("MoveToState requires userdata.target_z key!")
-            return
-        # create goal msg
+        self._topic = f"{userdata.ns}/gigatino/move"
+        self._client = ProxyActionClient(
+            {self._topic: Move}, wait_duration=0.0
+        )
+
         goal = Move.Goal()
-        # Recording the start time to set rotation duration output
         self._start_time = self._node.get_clock().now()
-        # goal.pose.header.stamp = self._start_time
-        # Define timeout duration (if not already initialized)
         self._target_time = Duration(seconds=self._timeout_sec)
 
-        if isinstance(userdata.target_frame, str):
-            goal.target_frame = userdata.target_frame
-            Logger.loginfo(f"{goal.target_frame}")
-        else:
-            Logger.logwarn(f"Invalid frame_id type: {type(userdata.target_frame).__name__}. Expected a string.")
-            self._error = True
-            return
+        goal.target_frame = userdata.target_frame
+        goal.x = 0.0
+        goal.y = 0.0
+        goal.z = 0.0
+        goal.relative = False
+        goal.use_gripper = False
+        goal.gripper_state = False
 
-        if isinstance(userdata.relative, bool):
-            goal.relative = userdata.relative  # Assign only if provided
-            Logger.loginfo(f"{goal.relative}")
-        else:
-            Logger.logwarn(f"Invalid relative type: {type(userdata.relative).__name__}. Expected a bool.")
-            self._error = True
-            return
+        Logger.loginfo(f"Moving to origin of frame: {userdata.target_frame} (topic: {self._topic})")
 
-        if isinstance(userdata.gripper_state, bool):
-            goal.gripper_state = userdata.gripper_state  # Assign only if provided
-            Logger.loginfo(f"{goal.gripper_state}")
-        else:
-            Logger.logwarn(f"Invalid gripper_state type: {type(userdata.gripper_state).__name__}. Expected a bool.")
-            self._error = True
-            return
-
-        if isinstance(userdata.use_gripper, bool):
-            goal.use_gripper = userdata.use_gripper
-            Logger.loginfo(f"{goal.use_gripper}")
-        else:
-            Logger.logwarn(f"Invalid use_gripper type: {type(userdata.use_gripper).__name__}. Expected a bool.")
-            self._error = True
-            return
-
-        if isinstance(userdata.x, float):
-            goal.x = userdata.x
-            Logger.loginfo(f"{goal.x}")
-        else:
-            Logger.logwarn(f"Invalid target_x type: {type(userdata.x).__name__}. Expected float.")
-            self._error = True
-            return
-
-        if isinstance(userdata.y, float):
-            goal.y = userdata.y
-            Logger.loginfo(f"{goal.y}")
-        else:
-            Logger.logwarn(f"Invalid target_y type: {type(userdata.y).__name__}. Expected float.")
-            self._error = True
-            return
-
-        if isinstance(userdata.z, float):
-            goal.z = userdata.z
-            Logger.loginfo(f"{goal.z}")
-        else:
-            Logger.logwarn(f"Invalid target_z type: {type(userdata.z).__name__}. Expected float.")
-            self._error = True
-            return
-
-        # Send the goal.
         try:
             self._client.send_goal(self._topic, goal, wait_duration=self._timeout_sec)
-            Logger.localinfo(f"{goal}")
         except Exception as exc:
-            Logger.logwarn(f"Failed to send the NavigateToPose command:\n  {type(exc)} - {exc}")
+            Logger.logwarn(f"Failed to send Move command:\n  {type(exc)} - {exc}")
             self._error = True
 
     def on_exit(self, userdata):
