@@ -108,7 +108,7 @@ class GripperMove(EventState):
         self._start_time = self._node.get_clock().now()
         self._target_time = Duration(seconds=self._timeout_sec)
 
-        goal.target_frame = userdata.target_frame
+        goal.target_frame = "%s/%s" % (userdata.ns, userdata.target_frame)
         goal.x = 0.0
         goal.y = 0.0
         goal.z = 0.0

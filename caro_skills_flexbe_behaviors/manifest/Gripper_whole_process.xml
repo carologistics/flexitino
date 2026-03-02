@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<behavior name="Gripper_whole_process">
+<behavior name="Whole_process">
 
-    <executable package_path="caro_skills_flexbe_behaviors.Gripper_whole_process_sm" class="Gripper_whole_processSM" />
+    <executable package_path="caro_skills_flexbe_behaviors.Gripper_whole_process_sm" class="Whole_processSM" />
     <tagstring></tagstring>
-    <author>Zhen Yan Khaw</author>
-    <date>Thu Mar 13 2025</date>
+    <author>Sam Köhler</author>
+    <date> 02.03.2026</date>
     <description>
-        to grab the work piece and return to origin
+        This behavior is a showcase for all the commen states we use to grip an object.
+        You can use this beahvior as an refance.
     </description>
 
 

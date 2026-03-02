@@ -1,32 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Copyright 2025 Zhen Yan Khaw
+# Copyright 2026 Sam Köhler
 #
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#  1. Redistributions of source code must retain the above copyright notice,
-#     this list of conditions and the following disclaimer.
-
-#  2. Redistributions in binary form must reproduce the above copyright notice,
-#     this list of conditions and the following disclaimer in the documentation
-#     and/or other materials provided with the distribution.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-#  3. Neither the name of the copyright holder nor the names of its
-#     contributors may be used to endorse or promote products derived from
-#     this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
-# TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 ###########################################################
 #               WARNING: Generated code!                  #
@@ -36,21 +23,21 @@
 ###########################################################
 
 """
-Define Gripper_whole_process.
+Define Whole_process.
 
-to grab the work piece and return to origin
+This behavior is a showcase for all the commen states we use to grip an object.
+You can use this beahvior as an refance.
 
-Created on Thu Mar 13 2025
-@author: Zhen Yan Khaw
+Created on  02.03.2026
+@author: Sam Köhler
 """
 
 
 from caro_skills_flexbe_states.Calibrate_state import CalibratetoOrigin
-from caro_skills_flexbe_states.gripper_close_gigatino_state import GripperCloseState
 from caro_skills_flexbe_states.gripper_gigatino_state import GripperState
 from caro_skills_flexbe_states.home_state import BackToOrigin
+from caro_skills_flexbe_states.motor_move_state import MotorMoveState
 from caro_skills_flexbe_states.move_gripper_state import GripperMove
-from caro_skills_flexbe_states.move_gripper_up_state import GripperMoveUp
 from flexbe_core import Autonomy
 from flexbe_core import Behavior
 from flexbe_core import ConcurrencyContainer
@@ -66,16 +53,17 @@ from flexbe_core import initialize_flexbe_core
 # [/MANUAL_IMPORT]
 
 
-class Gripper_whole_processSM(Behavior):
+class Whole_processSM(Behavior):
     """
-    Define Gripper_whole_process.
+    Define Whole_process.
 
-    to grab the work piece and return to origin
+    This behavior is a showcase for all the commen states we use to grip an object.
+    You can use this beahvior as an refance.
     """
 
     def __init__(self, node):
         super().__init__()
-        self.name = 'Gripper_whole_process'
+        self.name = 'Whole_process'
 
         # parameters of this behavior
         self.add_parameter('timeout', 0)
@@ -97,18 +85,16 @@ class Gripper_whole_processSM(Behavior):
     def create(self):
         """Create state machine."""
         # Root state machine
-        # x:909 y:591, x:130 y:400
+        # x:410 y:375, x:1313 y:137
         _state_machine = OperatableStateMachine(outcomes=['finished', 'failed'])
-        _state_machine.userdata.x = 0.15
-        _state_machine.userdata.y = 0.08
-        _state_machine.userdata.z = 0.03
-        _state_machine.userdata.z_offset = 0.05
-        _state_machine.userdata.gripper_state = False
-        _state_machine.userdata.use_gripper = False
-        _state_machine.userdata.target_frame = 'robotinobase1/end_effector_home'
-        _state_machine.userdata.relative = False
+        _state_machine.userdata.target_frame_gripper = 'end_effector_home'
         _state_machine.userdata.open = True
         _state_machine.userdata.close = False
+        _state_machine.userdata.ns = 'robotinobase3'
+        _state_machine.userdata.target_frame_motor_move = 'base_link'
+        _state_machine.userdata.target_x = 0.1
+        _state_machine.userdata.target_y = 0.1
+        _state_machine.userdata.target_yaw_euler = 0
 
         # Additional creation code can be added inside the following tags
         # [MANUAL_CREATE]
@@ -117,122 +103,95 @@ class Gripper_whole_processSM(Behavior):
         # [/MANUAL_CREATE]
 
         with _state_machine:
-            # x:105 y:42
-            OperatableStateMachine.add('calibrate',
-                                       CalibratetoOrigin(timeout=10,
-                                                         action_topic='robotinobase1/gigatino/calibrate'),
-                                       transitions={'pose_reached': 'move_above'  # 314 10 -1 -1 -1 -1
-                                                    , 'failed': 'move_above'  # 314 10 -1 -1 -1 -1
-                                                    , 'canceled': 'move_above'  # 314 10 -1 -1 -1 -1
-                                                    , 'timeout': 'move_above'  # 314 10 -1 -1 -1 -1
+            # x:118 y:27
+            OperatableStateMachine.add('move robot',
+                                       MotorMoveState(timeout=self.timeout),
+                                       transitions={'reached': 'calibrate gripper'  # 291 53 -1 -1 -1 -1
+                                                    , 'failed': 'finished'  # 340 240 -1 -1 -1 -1
+                                                    , 'canceled': 'finished'  # 340 240 -1 -1 -1 -1
+                                                    , 'timeout': 'finished'  # 340 240 -1 -1 -1 -1
                                                     },
-                                       autonomy={'pose_reached': Autonomy.Off,
+                                       autonomy={'reached': Autonomy.Off,
                                                  'failed': Autonomy.Off,
                                                  'canceled': Autonomy.Off,
-                                                 'timeout': Autonomy.Off})
+                                                 'timeout': Autonomy.Off},
+                                       remapping={'namespace': 'ns',
+                                                  'frame': 'target_frame_motor_move',
+                                                  'target_x': 'target_x',
+                                                  'target_y': 'target_y',
+                                                  'target_yaw': 'target_yaw_euler',
+                                                  'distance': 'distance'})
 
-            # x:891 y:155
-            OperatableStateMachine.add('close_gripper',
-                                       GripperCloseState(timeout=10,
-                                                         action_topic='robotinobase1/gigatino/gripper'),
-                                       transitions={'success': 'up'  # 943 266 -1 -1 -1 -1
-                                                    , 'failed': 'failed'  # 514 301 -1 -1 -1 -1
-                                                    , 'canceled': 'failed'  # 514 301 -1 -1 -1 -1
-                                                    , 'timeout': 'failed'  # 514 301 -1 -1 -1 -1
+            # x:330 y:24
+            OperatableStateMachine.add('calibrate gripper',
+                                       CalibratetoOrigin(timeout=self.timeout),
+                                       transitions={'home_reached': 'open gripper'  # 516 47 -1 -1 -1 -1
+                                                    , 'failed': 'finished'  # 421 205 -1 -1 -1 -1
+                                                    , 'canceled': 'finished'  # 421 205 -1 -1 -1 -1
+                                                    , 'timeout': 'finished'  # 421 205 -1 -1 -1 -1
+                                                    },
+                                       autonomy={'home_reached': Autonomy.Off,
+                                                 'failed': Autonomy.Off,
+                                                 'canceled': Autonomy.Off,
+                                                 'timeout': Autonomy.Off},
+                                       remapping={'ns': 'ns'})
+
+            # x:1009 y:18
+            OperatableStateMachine.add('close gripper',
+                                       GripperState(timeout=self.timeout),
+                                       transitions={'success': 'move gripper back'  # 1080 93 -1 -1 -1 -1
+                                                    , 'failed': 'finished'  # 711 241 -1 -1 -1 -1
+                                                    , 'canceled': 'finished'  # 711 241 -1 -1 -1 -1
+                                                    , 'timeout': 'finished'  # 711 241 -1 -1 -1 -1
                                                     },
                                        autonomy={'success': Autonomy.Off,
                                                  'failed': Autonomy.Off,
                                                  'canceled': Autonomy.Off,
                                                  'timeout': Autonomy.Off},
-                                       remapping={'close': 'close'})
+                                       remapping={'open': 'close', 'ns': 'ns'})
 
-            # x:790 y:38
-            OperatableStateMachine.add('down',
-                                       GripperMove(timeout=10,
-                                                   action_topic='robotinobase1/gigatino/move'),
-                                       transitions={'reached': 'close_gripper'  # 873 95 -1 -1 -1 -1
-                                                    , 'failed': 'failed'  # 470 250 -1 -1 -1 -1
-                                                    , 'canceled': 'failed'  # 470 250 -1 -1 -1 -1
-                                                    , 'timeout': 'failed'  # 470 250 -1 -1 -1 -1
+            # x:784 y:23
+            OperatableStateMachine.add('move gripper',
+                                       GripperMove(timeout=self.timeout),
+                                       transitions={'reached': 'close gripper'  # 964 44 -1 -1 -1 -1
+                                                    , 'failed': 'finished'  # 604 234 -1 -1 -1 -1
+                                                    , 'canceled': 'finished'  # 604 234 -1 -1 -1 -1
+                                                    , 'timeout': 'finished'  # 604 234 -1 -1 -1 -1
                                                     },
                                        autonomy={'reached': Autonomy.Off,
                                                  'failed': Autonomy.Off,
                                                  'canceled': Autonomy.Off,
                                                  'timeout': Autonomy.Off},
-                                       remapping={'target_frame': 'target_frame'})
+                                       remapping={'target_frame': 'target_frame_gripper',
+                                                  'ns': 'ns'})
 
-            # x:529 y:37
-            OperatableStateMachine.add('grip',
-                                       GripperState(timeout=10,
-                                                    action_topic='robotinobase1/gigatino/gripper'),
-                                       transitions={'success': 'down'  # 706 38 -1 -1 -1 -1
-                                                    , 'failed': 'failed'  # 332 252 -1 -1 -1 -1
-                                                    , 'canceled': 'failed'  # 332 252 -1 -1 -1 -1
-                                                    , 'timeout': 'failed'  # 332 252 -1 -1 -1 -1
+            # x:1016 y:120
+            OperatableStateMachine.add('move gripper back',
+                                       BackToOrigin(timeout=self.timeout),
+                                       transitions={'home_reached': 'failed'  # 1234 147 -1 -1 -1 -1
+                                                    , 'failed': 'finished'  # 734 331 -1 -1 -1 -1
+                                                    , 'canceled': 'finished'  # 734 331 -1 -1 -1 -1
+                                                    , 'timeout': 'finished'  # 734 331 -1 -1 -1 -1
+                                                    },
+                                       autonomy={'home_reached': Autonomy.Off,
+                                                 'failed': Autonomy.Off,
+                                                 'canceled': Autonomy.Off,
+                                                 'timeout': Autonomy.Off},
+                                       remapping={'ns': 'ns'})
+
+            # x:566 y:22
+            OperatableStateMachine.add('open gripper',
+                                       GripperState(timeout=self.timeout),
+                                       transitions={'success': 'move gripper'  # 745 46 -1 -1 -1 -1
+                                                    , 'failed': 'finished'  # 494 226 -1 -1 -1 -1
+                                                    , 'canceled': 'finished'  # 494 226 -1 -1 -1 -1
+                                                    , 'timeout': 'finished'  # 494 226 -1 -1 -1 -1
                                                     },
                                        autonomy={'success': Autonomy.Off,
                                                  'failed': Autonomy.Off,
                                                  'canceled': Autonomy.Off,
                                                  'timeout': Autonomy.Off},
-                                       remapping={'open': 'open'})
-
-            # x:860 y:430
-            OperatableStateMachine.add('home',
-                                       BackToOrigin(timeout=10,
-                                                    action_topic='robotinobase1/gigatino/home'),
-                                       transitions={'pose_reached': 'finished'  # 931 568 -1 -1 -1 -1
-                                                    , 'failed': 'failed'  # 496 445 -1 -1 -1 -1
-                                                    , 'canceled': 'failed'  # 496 445 -1 -1 -1 -1
-                                                    , 'timeout': 'failed'  # 496 445 -1 -1 -1 -1
-                                                    },
-                                       autonomy={'pose_reached': Autonomy.Off,
-                                                 'failed': Autonomy.Off,
-                                                 'canceled': Autonomy.Off,
-                                                 'timeout': Autonomy.Off})
-
-            # x:342 y:25
-            OperatableStateMachine.add('move_above',
-                                       GripperMoveUp(timeout=10,
-                                                     action_topic='robotinobase1/gigatino/move'),
-                                       transitions={'reached': 'grip'  # 516 28 -1 -1 -1 -1
-                                                    , 'failed': 'failed'  # 240 242 -1 -1 -1 -1
-                                                    , 'canceled': 'failed'  # 240 242 -1 -1 -1 -1
-                                                    , 'timeout': 'failed'  # 240 242 -1 -1 -1 -1
-                                                    },
-                                       autonomy={'reached': Autonomy.Off,
-                                                 'failed': Autonomy.Off,
-                                                 'canceled': Autonomy.Off,
-                                                 'timeout': Autonomy.Off},
-                                       remapping={'relative': 'relative',
-                                                  'target_frame': 'target_frame',
-                                                  'x': 'x',
-                                                  'y': 'y',
-                                                  'z': 'z',
-                                                  'gripper_state': 'gripper_state',
-                                                  'use_gripper': 'use_gripper',
-                                                  'z_offset': 'z_offset'})
-
-            # x:883 y:288
-            OperatableStateMachine.add('up',
-                                       GripperMoveUp(timeout=10,
-                                                     action_topic='robotinobase1/gigatino/move'),
-                                       transitions={'reached': 'home'  # 940 428 -1 -1 -1 -1
-                                                    , 'failed': 'failed'  # 509 374 -1 -1 -1 -1
-                                                    , 'canceled': 'failed'  # 509 374 -1 -1 -1 -1
-                                                    , 'timeout': 'failed'  # 509 374 -1 -1 -1 -1
-                                                    },
-                                       autonomy={'reached': Autonomy.Off,
-                                                 'failed': Autonomy.Off,
-                                                 'canceled': Autonomy.Off,
-                                                 'timeout': Autonomy.Off},
-                                       remapping={'relative': 'relative',
-                                                  'target_frame': 'target_frame',
-                                                  'x': 'x',
-                                                  'y': 'y',
-                                                  'z': 'z',
-                                                  'gripper_state': 'gripper_state',
-                                                  'use_gripper': 'use_gripper',
-                                                  'z_offset': 'z_offset'})
+                                       remapping={'open': 'open', 'ns': 'ns'})
 
         return _state_machine
 
