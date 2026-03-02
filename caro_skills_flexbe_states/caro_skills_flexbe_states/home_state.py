@@ -15,39 +15,38 @@
 from flexbe_core import EventState
 from flexbe_core import Logger
 from flexbe_core.proxy import ProxyActionClient
-from gigatino_msgs.action import Move
+from gigatino_msgs.action import Home
 from rclpy.duration import Duration
 
 
-class GripperMove(EventState):
+class BackToOrigin(EventState):
     """
-    This state moves the gripper to the origin of a given frame.
+    State that moves gripper to home position.
 
     Parameters
     -- timeout             Maximum time allowed (seconds)
 
     Outputs
-    <= reached              Robot reached pose successfully
-    <= failed               Failed for some reason.
-    <= canceled             User canceled before completion.
-    <= timeout              The action has timed out.
+    <= home_reached        Robot reached pose successfully.
+    <= failed              Failed for some reason.
+    <= canceled            User canceled before completion.
+    <= timeout             The action has timed out.
 
     User data
-    ># target_frame         Frame to move to (origin of this frame)
-    ># ns                   Robot namespace (e.g. 'robotinobase2')
+    ># ns                   Robot namespace (e.g. 'robotinobase3')
     """
 
     def __init__(self, timeout):
 
         super().__init__(
-            outcomes=["reached", "failed", "canceled", "timeout"],
-            input_keys=["target_frame", "ns"],
+            outcomes=["home_reached", "failed", "canceled", "timeout"],
+            input_keys=["ns"],
             output_keys=[],
         )
         self._timeout = Duration(seconds=timeout)
         self._timeout_sec = timeout
 
-        ProxyActionClient.initialize(GripperMove._node)
+        ProxyActionClient.initialize(BackToOrigin._node)
 
         self._client = None
         self._topic = None
@@ -70,10 +69,12 @@ class GripperMove(EventState):
             return self._return
 
         if self._client.has_result(self._topic):
-            _ = self._client.get_result(self._topic)
-            Logger.loginfo("Pose reached")
-            self._return = "reached"
+            _ = self._client.get_result(self._topic)  # The delta result value is not useful here
+            # userdata.duration = self._node.get_clock().now() - self._start_time
+            Logger.loginfo("Home reached")
+            self._return = "home_reached"
             return self._return
+
         if self._node.get_clock().now().nanoseconds - self._start_time.nanoseconds > self._target_time.nanoseconds:
             self._return = "timeout"
             return "timeout"
@@ -91,37 +92,25 @@ class GripperMove(EventState):
 
         if "ns" not in userdata or not isinstance(userdata.ns, str):
             self._error = True
-            Logger.logwarn("GripperMove requires userdata.ns (string)!")
+            Logger.logwarn("BackToOrigin requires userdata.ns (string)!")
             return
 
-        if "target_frame" not in userdata or not isinstance(userdata.target_frame, str):
-            self._error = True
-            Logger.logwarn("GripperMove requires userdata.target_frame (string)!")
-            return
-
-        self._topic = f"{userdata.ns}/gigatino/move"
+        self._topic = f"{userdata.ns}/gigatino/home"
         self._client = ProxyActionClient(
-            {self._topic: Move}, wait_duration=0.0
+            {self._topic: Home}, wait_duration=0.0
         )
 
-        goal = Move.Goal()
         self._start_time = self._node.get_clock().now()
         self._target_time = Duration(seconds=self._timeout_sec)
 
-        goal.target_frame = userdata.target_frame
-        goal.x = 0.0
-        goal.y = 0.0
-        goal.z = 0.0
-        goal.relative = False
-        goal.use_gripper = False
-        goal.gripper_state = False
+        goal = Home.Goal()
 
-        Logger.loginfo(f"Moving to origin of frame: {userdata.target_frame} (topic: {self._topic})")
+        Logger.loginfo(f"Moving to home (topic: {self._topic})")
 
         try:
             self._client.send_goal(self._topic, goal, wait_duration=self._timeout_sec)
         except Exception as exc:
-            Logger.logwarn(f"Failed to send Move command:\n  {type(exc)} - {exc}")
+            Logger.logwarn(f"Failed to send Home command:\n  {type(exc)} - {exc}")
             self._error = True
 
     def on_exit(self, userdata):

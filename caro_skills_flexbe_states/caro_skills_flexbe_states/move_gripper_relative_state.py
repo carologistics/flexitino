@@ -19,9 +19,9 @@ from gigatino_msgs.action import Move
 from rclpy.duration import Duration
 
 
-class GripperMove(EventState):
+class GripperMoveRelative(EventState):
     """
-    This state moves the gripper to the origin of a given frame.
+    This state moves the gripper to a position relative to a given frame.
 
     Parameters
     -- timeout             Maximum time allowed (seconds)
@@ -33,7 +33,10 @@ class GripperMove(EventState):
     <= timeout              The action has timed out.
 
     User data
-    ># target_frame         Frame to move to (origin of this frame)
+    ># target_frame         Frame to move relative to
+    ># x                    X offset in target_frame (float)
+    ># y                    Y offset in target_frame (float)
+    ># z                    Z offset in target_frame (float)
     ># ns                   Robot namespace (e.g. 'robotinobase2')
     """
 
@@ -41,13 +44,13 @@ class GripperMove(EventState):
 
         super().__init__(
             outcomes=["reached", "failed", "canceled", "timeout"],
-            input_keys=["target_frame", "ns"],
+            input_keys=["target_frame", "x", "y", "z", "ns"],
             output_keys=[],
         )
         self._timeout = Duration(seconds=timeout)
         self._timeout_sec = timeout
 
-        ProxyActionClient.initialize(GripperMove._node)
+        ProxyActionClient.initialize(GripperMoveRelative._node)
 
         self._client = None
         self._topic = None
@@ -61,12 +64,10 @@ class GripperMove(EventState):
 
         If no outcome is returned, the state will stay active.
         """
-        # Check if the client failed to send the goal.
         if self._error:
             return "failed"
 
         if self._return is not None:
-            # Return prior outcome in case transition is blocked by autonomy level
             return self._return
 
         if self._client.has_result(self._topic):
@@ -91,12 +92,27 @@ class GripperMove(EventState):
 
         if "ns" not in userdata or not isinstance(userdata.ns, str):
             self._error = True
-            Logger.logwarn("GripperMove requires userdata.ns (string)!")
+            Logger.logwarn("GripperMoveRelative requires userdata.ns (string)!")
             return
 
         if "target_frame" not in userdata or not isinstance(userdata.target_frame, str):
             self._error = True
-            Logger.logwarn("GripperMove requires userdata.target_frame (string)!")
+            Logger.logwarn("GripperMoveRelative requires userdata.target_frame (string)!")
+            return
+
+        if "x" not in userdata or not isinstance(userdata.x, float):
+            self._error = True
+            Logger.logwarn("GripperMoveRelative requires userdata.x (float)!")
+            return
+
+        if "y" not in userdata or not isinstance(userdata.y, float):
+            self._error = True
+            Logger.logwarn("GripperMoveRelative requires userdata.y (float)!")
+            return
+
+        if "z" not in userdata or not isinstance(userdata.z, float):
+            self._error = True
+            Logger.logwarn("GripperMoveRelative requires userdata.z (float)!")
             return
 
         self._topic = f"{userdata.ns}/gigatino/move"
@@ -109,14 +125,15 @@ class GripperMove(EventState):
         self._target_time = Duration(seconds=self._timeout_sec)
 
         goal.target_frame = userdata.target_frame
-        goal.x = 0.0
-        goal.y = 0.0
-        goal.z = 0.0
+        goal.x = userdata.x
+        goal.y = userdata.y
+        goal.z = userdata.z
         goal.relative = False
         goal.use_gripper = False
         goal.gripper_state = False
 
-        Logger.loginfo(f"Moving to origin of frame: {userdata.target_frame} (topic: {self._topic})")
+        Logger.loginfo(f"Moving to ({userdata.x}, {userdata.y}, {userdata.z}) "
+                       f"in frame: {userdata.target_frame} (topic: {self._topic})")
 
         try:
             self._client.send_goal(self._topic, goal, wait_duration=self._timeout_sec)

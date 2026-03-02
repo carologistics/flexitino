@@ -12,42 +12,43 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Use to open gripper."""
 from flexbe_core import EventState
 from flexbe_core import Logger
 from flexbe_core.proxy import ProxyActionClient
-from gigatino_msgs.action import Move
+from gigatino_msgs.action import Gripper
 from rclpy.duration import Duration
 
 
-class GripperMove(EventState):
+class GripperState(EventState):
     """
-    This state moves the gripper to the origin of a given frame.
+    Use to open or close the gripper.
 
     Parameters
     -- timeout             Maximum time allowed (seconds)
 
     Outputs
-    <= reached              Robot reached pose successfully
-    <= failed               Failed for some reason.
-    <= canceled             User canceled before completion.
-    <= timeout              The action has timed out.
+    <= success             Gripper action completed.
+    <= failed              Failed for some reason.
+    <= canceled            User canceled before completion.
+    <= timeout             The action has timed out.
 
     User data
-    ># target_frame         Frame to move to (origin of this frame)
-    ># ns                   Robot namespace (e.g. 'robotinobase2')
+    ># open                 True to open the gripper, False to close
+    ># ns                   Robot namespace (e.g. 'robotinobase3')
     """
 
     def __init__(self, timeout):
 
         super().__init__(
-            outcomes=["reached", "failed", "canceled", "timeout"],
-            input_keys=["target_frame", "ns"],
+            outcomes=["success", "failed", "canceled", "timeout"],
+            input_keys=["open", "ns"],
             output_keys=[],
         )
         self._timeout = Duration(seconds=timeout)
         self._timeout_sec = timeout
 
-        ProxyActionClient.initialize(GripperMove._node)
+        ProxyActionClient.initialize(GripperState._node)
 
         self._client = None
         self._topic = None
@@ -56,11 +57,8 @@ class GripperMove(EventState):
         self._start_time = None
 
     def execute(self, userdata):
-        """
-        Call this method periodically while the state is active.
+        # While this state is active, check if the action has been finished and evaluate the result.
 
-        If no outcome is returned, the state will stay active.
-        """
         # Check if the client failed to send the goal.
         if self._error:
             return "failed"
@@ -70,62 +68,53 @@ class GripperMove(EventState):
             return self._return
 
         if self._client.has_result(self._topic):
-            _ = self._client.get_result(self._topic)
-            Logger.loginfo("Pose reached")
-            self._return = "reached"
+            _ = self._client.get_result(self._topic)  # The delta result value is not useful here
+            Logger.loginfo("gripped work piece")
+            self._return = "success"
             return self._return
-        if self._node.get_clock().now().nanoseconds - self._start_time.nanoseconds > self._target_time.nanoseconds:
+
+        if self._node.get_clock().now().nanoseconds - self._start_time.nanoseconds > self._timeout.nanoseconds:
             self._return = "timeout"
             return "timeout"
 
+        # If the action has not yet finished, no outcome will be returned and the state stays active.
         return None
 
     def on_enter(self, userdata):
-        """
-        Call this method when the state becomes active.
 
-        i.e. a transition from another state to this one is taken.
-        """
         self._error = False
         self._return = None
 
         if "ns" not in userdata or not isinstance(userdata.ns, str):
             self._error = True
-            Logger.logwarn("GripperMove requires userdata.ns (string)!")
+            Logger.logwarn("GripperState requires userdata.ns (string)!")
             return
 
-        if "target_frame" not in userdata or not isinstance(userdata.target_frame, str):
+        if "open" not in userdata or not isinstance(userdata.open, bool):
             self._error = True
-            Logger.logwarn("GripperMove requires userdata.target_frame (string)!")
+            Logger.logwarn("GripperState requires userdata.open (bool)!")
             return
 
-        self._topic = f"{userdata.ns}/gigatino/move"
+        self._topic = f"{userdata.ns}/gigatino/gripper"
         self._client = ProxyActionClient(
-            {self._topic: Move}, wait_duration=0.0
+            {self._topic: Gripper}, wait_duration=0.0
         )
 
-        goal = Move.Goal()
         self._start_time = self._node.get_clock().now()
         self._target_time = Duration(seconds=self._timeout_sec)
 
-        goal.target_frame = userdata.target_frame
-        goal.x = 0.0
-        goal.y = 0.0
-        goal.z = 0.0
-        goal.relative = False
-        goal.use_gripper = False
-        goal.gripper_state = False
+        goal = Gripper.Goal()
+        goal.open = userdata.open
 
-        Logger.loginfo(f"Moving to origin of frame: {userdata.target_frame} (topic: {self._topic})")
+        Logger.loginfo(f"Gripper {'open' if userdata.open else 'close'} (topic: {self._topic})")
 
         try:
             self._client.send_goal(self._topic, goal, wait_duration=self._timeout_sec)
         except Exception as exc:
-            Logger.logwarn(f"Failed to send Move command:\n  {type(exc)} - {exc}")
+            Logger.logwarn(f"Failed to send Gripper command:\n  {type(exc)} - {exc}")
             self._error = True
 
     def on_exit(self, userdata):
-
         if not self._client.has_result(self._topic):
             self._client.cancel(self._topic)
             Logger.loginfo("Cancelled active action goal.")
